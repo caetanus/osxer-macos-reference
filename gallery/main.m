@@ -247,6 +247,7 @@
 - (void)applicationDidFinishLaunching:(NSNotification *)notification
 {
     [self buildMenu]; [self buildWindow];
+    [NSApp activateIgnoringOtherApps:YES];
     NSDictionary *env = [[NSProcessInfo processInfo] environment];
     if ([env[@"GALLERY_FOCUS"] isEqualToString:@"1"]) [self.window makeFirstResponder:self.input];
     double delay = [env[@"GALLERY_QUIT_AFTER"] doubleValue];
@@ -269,6 +270,9 @@ int main(int argc, const char *argv[])
 {
     @autoreleasepool {
         NSApplication *app = [NSApplication sharedApplication];
+        // A bare executable (no .app bundle) must ask to be a regular, activatable
+        // app; otherwise macOS shows it inactive (grey title buttons, no accent).
+        [app setActivationPolicy:NSApplicationActivationPolicyRegular];
         GalleryDelegate *delegate = [[GalleryDelegate alloc] init];
         [app setDelegate:delegate]; [app run];
     }
