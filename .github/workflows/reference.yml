@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-14, macos-15]
+        os: [macos-15]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -44,7 +44,8 @@ jobs:
           shoot light light
           shoot light-focus light GALLERY_FOCUS=1
           shoot light-menu-file light GALLERY_MENU=File
-          shoot dark dark
+          shoot dark light GALLERY_APPEARANCE=dark
+          shoot dark-focus light GALLERY_APPEARANCE=dark GALLERY_FOCUS=1
           defaults delete -g AppleInterfaceStyle 2>/dev/null || true
           ls -la out
 

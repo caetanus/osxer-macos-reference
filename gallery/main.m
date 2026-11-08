@@ -273,6 +273,14 @@ int main(int argc, const char *argv[])
         // A bare executable (no .app bundle) must ask to be a regular, activatable
         // app; otherwise macOS shows it inactive (grey title buttons, no accent).
         [app setActivationPolicy:NSApplicationActivationPolicyRegular];
+        // GALLERY_APPEARANCE=dark: ask for the Dark appearance in-process (10.14+ API, called
+        // dynamically so the source also builds against SDKs that lack it).
+        if ([[[NSProcessInfo processInfo] environment][@"GALLERY_APPEARANCE"] isEqualToString:@"dark"]) {
+            id dark = [NSClassFromString(@"NSAppearance") performSelector:@selector(appearanceNamed:)
+                                                                 withObject:@"NSAppearanceNameDarkAqua"];
+            if (dark && [app respondsToSelector:@selector(setAppearance:)])
+                [app performSelector:@selector(setAppearance:) withObject:dark];
+        }
         GalleryDelegate *delegate = [[GalleryDelegate alloc] init];
         [app setDelegate:delegate]; [app run];
     }
