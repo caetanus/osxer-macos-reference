@@ -20,7 +20,7 @@ jobs:
       - name: System info
         run: |
           mkdir -p out
-          { sw_vers; system_profiler SPDisplaysDataType | grep -E 'Resolution|Retina|UI Looks'; } > out/system.txt
+          { sw_vers; system_profiler SPDisplaysDataType || true; } > out/system.txt 2>&1
           cat out/system.txt
 
       - name: Capture (light, dark; window, focus, menu)
