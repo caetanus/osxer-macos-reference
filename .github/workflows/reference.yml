@@ -15,7 +15,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build gallery
-        run: clang -fobjc-arc -Wall -framework Cocoa gallery/main.m -o Gallery
+        run: mkdir -p build && clang -fobjc-arc -Wall -Wno-deprecated-declarations -framework Cocoa gallery/main.m -o build/GalleryApp
 
       - name: System info
         run: |
@@ -30,7 +30,7 @@ jobs:
             local name=$1 look=$2; shift 2
             if [ "$look" = dark ]; then defaults write -g AppleInterfaceStyle Dark
             else defaults delete -g AppleInterfaceStyle 2>/dev/null || true; fi
-            env GALLERY_QUIT_AFTER=25 "$@" ./Gallery > "out/$name.log" 2>&1 &
+            env GALLERY_QUIT_AFTER=25 "$@" ./build/GalleryApp > "out/$name.log" 2>&1 &
             local pid=$!
             for _ in $(seq 1 60); do grep -q 'gallery: ready' "out/$name.log" && break; sleep 0.5; done
             local win; win=$(sed -n 's/.*gallery: ready window=\([0-9]*\).*/\1/p' "out/$name.log")
