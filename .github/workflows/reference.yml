@@ -1,0 +1,54 @@
+name: macOS reference screenshots
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  capture:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-14, macos-15]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build gallery
+        run: clang -fobjc-arc -Wall -framework Cocoa gallery/main.m -o Gallery
+
+      - name: System info
+        run: |
+          mkdir -p out
+          { sw_vers; system_profiler SPDisplaysDataType | grep -E 'Resolution|Retina|UI Looks'; } > out/system.txt
+          cat out/system.txt
+
+      - name: Capture (light, dark; window, focus, menu)
+        run: |
+          set -euo pipefail
+          shoot() {  # shoot <name> <appearance> [VAR=value...]
+            local name=$1 look=$2; shift 2
+            if [ "$look" = dark ]; then defaults write -g AppleInterfaceStyle Dark
+            else defaults delete -g AppleInterfaceStyle 2>/dev/null || true; fi
+            env GALLERY_QUIT_AFTER=25 "$@" ./Gallery > "out/$name.log" 2>&1 &
+            local pid=$!
+            for _ in $(seq 1 60); do grep -q 'gallery: ready' "out/$name.log" && break; sleep 0.5; done
+            local win; win=$(sed -n 's/.*gallery: ready window=\([0-9]*\).*/\1/p' "out/$name.log")
+            sleep 3
+            osascript -e 'tell application "System Events" to set frontmost of (first process whose unix id is '"$pid"') to true' || true
+            sleep 1
+            screencapture -x -o -l "$win" "out/$name-window.png" || echo "window capture failed" >> "out/$name.log"
+            screencapture -x "out/$name-screen.png" || echo "screen capture failed" >> "out/$name.log"
+            kill "$pid" 2>/dev/null || true; wait "$pid" 2>/dev/null || true
+          }
+          shoot light light
+          shoot light-focus light GALLERY_FOCUS=1
+          shoot light-menu-file light GALLERY_MENU=File
+          shoot dark dark
+          defaults delete -g AppleInterfaceStyle 2>/dev/null || true
+          ls -la out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: reference-${{ matrix.os }}
+          path: out/
