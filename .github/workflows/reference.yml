@@ -49,6 +49,22 @@ jobs:
           defaults delete -g AppleInterfaceStyle 2>/dev/null || true
           ls -la out
 
+      - name: Capture TextEdit (real app) with a test document
+        run: |
+          set -uo pipefail
+          cp textedit/teste.rtf "$RUNNER_TEMP/teste.rtf"
+          open -a TextEdit "$RUNNER_TEMP/teste.rtf"
+          id=""
+          for _ in $(seq 1 40); do id=$(swift textedit/winid.swift TextEdit 2>/dev/null) && break; sleep 1; done
+          sleep 3
+          if [ -n "$id" ]; then
+            screencapture -x -o -l "$id" out/textedit-window.png
+          else
+            echo "no TextEdit window" > out/textedit.log
+          fi
+          screencapture -x out/textedit-screen.png
+          osascript -e 'quit app "TextEdit"' || true
+
       - uses: actions/upload-artifact@v4
         with:
           name: reference-${{ matrix.os }}
